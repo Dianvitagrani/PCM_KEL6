@@ -1,3 +1,4 @@
+import base64
 import os
 
 import matplotlib
@@ -42,6 +43,25 @@ GAUSS_SIGMA = {3: 0.5, 5: 1.0, 7: 1.5}
 
 st.set_page_config(page_title="Pengolahan Citra Medika", layout="wide")
 
+
+def logo_html():
+    """Cari file logo*.png/jpg/webp di folder app.py atau images/, tampilkan di kiri header."""
+    mimes = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+             ".webp": "image/webp", ".svg": "image/svg+xml"}
+    for folder in (BASE_DIR, IMAGE_DIR):
+        if not os.path.isdir(folder):
+            continue
+        for f in sorted(os.listdir(folder)):
+            stem, ext = os.path.splitext(f)
+            if stem.lower().startswith("logo") and ext.lower() in mimes:
+                with open(os.path.join(folder, f), "rb") as fh:
+                    b64 = base64.b64encode(fh.read()).decode()
+                return (f'<img src="data:{mimes[ext.lower()]};base64,{b64}" '
+                        'style="height:48px;position:absolute;left:20px;top:50%;'
+                        'transform:translateY(-50%);">')
+    return ""
+
+
 # ======================================================================
 # STYLE
 # ======================================================================
@@ -50,7 +70,7 @@ st.markdown(
     <style>
     .stApp { background-color: #ffd6d6; }
     .header {
-        background: #f08a9b; color: white; text-align: center;
+        position: relative; background: #f08a9b; color: white; text-align: center;
         font-size: 28px; font-weight: 800; letter-spacing: 1px;
         padding: 10px 20px; border-radius: 30px; margin-bottom: 18px;
     }
@@ -59,21 +79,40 @@ st.markdown(
         font-weight: 800; padding: 3px 16px; border-radius: 20px;
         margin: 18px 0 8px 0; font-size: 15px;
     }
-    /* Dropdown */
+    /* Dropdown (Streamlit versi baru) */
+    [data-testid="stSelectbox"] div[role="group"] {
+        background-color: #9E182B !important; border-color: #9E182B !important;
+    }
+    [data-testid="stSelectbox"] input {
+        color: white !important; -webkit-text-fill-color: white !important;
+    }
+    [data-testid="stSelectbox"] svg { fill: white !important; color: white !important; }
+    /* Daftar pilihan saat dropdown dibuka */
+    [data-testid="stSelectboxVirtualDropdown"],
+    [data-testid="stSelectboxVirtualDropdown"] [role="listbox"] {
+        background-color: #9E182B !important;
+    }
+    [data-testid="stSelectboxVirtualDropdown"] [role="option"],
+    [data-testid="stSelectboxVirtualDropdown"] [role="option"] * {
+        color: white !important; background-color: transparent !important;
+    }
+    [data-testid="stSelectboxVirtualDropdown"] [role="option"]:hover,
+    [data-testid="stSelectboxVirtualDropdown"] [role="option"][aria-selected="true"] {
+        background-color: #c23a4d !important;
+    }
+    /* Dropdown (Streamlit versi lama) */
     div[data-baseweb="select"] > div {
         background-color: #9E182B !important; border-color: #9E182B !important;
     }
     div[data-baseweb="select"] * { color: white !important; }
     div[data-baseweb="select"] svg { fill: white !important; }
-    /* Daftar pilihan dropdown */
     div[data-baseweb="popover"] ul, div[data-baseweb="popover"] li {
         background-color: #9E182B !important; color: white !important;
     }
-    div[data-baseweb="popover"] li:hover { background-color: #c23a4d !important; }
     /* Teks hitam: label dropdown, caption di bawah gambar, markdown */
     [data-testid="stWidgetLabel"] p, [data-testid="stWidgetLabel"] label,
     [data-testid="stImageCaption"], [data-testid="stCaptionContainer"],
-    figcaption, .stMarkdown p { color: #000000 !important; }
+    figcaption, .stMarkdown p { color: #000000 !important; opacity: 1 !important; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -223,7 +262,7 @@ def filter_row(label, cs, res):
 # HEADER + DROPDOWN
 # ======================================================================
 st.markdown(
-    '<div class="header">PENGOLAHAN CITRA MEDIKA IMAGE ENHANCEMENT</div>',
+    f'<div class="header">{logo_html()}PENGOLAHAN CITRA MEDIKA IMAGE ENHANCEMENT</div>',
     unsafe_allow_html=True,
 )
 
@@ -248,19 +287,19 @@ section("CITRA ASLI")
 c_left, c_right = st.columns([1, 3])
 c_left.image(image, caption=name, width="stretch")
 
-fig, axes = plt.subplots(1, 4, figsize=(14, 2.8))
-for ch, color in enumerate(["red", "green", "blue"]):
-    axes[0].hist(image[:, :, ch].ravel(), bins=256, range=(0, 256),
-                 color=color, alpha=0.5, label=color.capitalize())
-axes[0].set_title("Histogram RGB")
-axes[0].legend(fontsize=7)
+# Model histogram sama seperti di notebook (ukuran font default, plot pendek & lebar)
+fig, axes = plt.subplots(1, 4, figsize=(15, 1.9))
+axes[0].hist(image[:, :, 0].ravel(), bins=256, color="red", alpha=0.5, label="Red")
+axes[0].hist(image[:, :, 1].ravel(), bins=256, color="green", alpha=0.5, label="Green")
+axes[0].hist(image[:, :, 2].ravel(), bins=256, color="blue", alpha=0.5, label="Blue")
+axes[0].set_title(name + " - Histogram RGB")
+axes[0].legend()
 for ax, ch, color in zip(axes[1:], range(3), ["red", "green", "blue"]):
-    ax.hist(image[:, :, ch].ravel(), bins=256, range=(0, 256), color=color)
-    ax.set_title(f"Channel {color.capitalize()}")
+    ax.hist(image[:, :, ch].ravel(), bins=256, color=color)
+    ax.set_title(f"{name} - Channel {color.capitalize()}")
 for ax in axes:
-    ax.set_xlabel("Intensitas Piksel", fontsize=8)
-    ax.set_ylabel("Jumlah Piksel", fontsize=8)
-    ax.tick_params(labelsize=7)
+    ax.set_xlabel("Intensitas Piksel")
+    ax.set_ylabel("Jumlah Piksel")
 plt.tight_layout()
 c_right.pyplot(fig)
 plt.close(fig)
