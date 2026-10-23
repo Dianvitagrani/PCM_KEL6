@@ -138,13 +138,27 @@ def histogram_equalization(img):
     return np.clip(cdf[img] * 255, 0, 255).astype(np.uint8)
 
 
-def adaptive_he(img, clip):
+def adaptive_he_float(img, clip):
     # Tile default skimage = ukuran citra // 8. Pada citra kecil (mis. 28-64 px) tile jadi
     # terlalu mungil sehingga clip_limit 0.01-0.05 tidak berpengaruh sama sekali.
     # Karena itu tile minimal 14 px; untuk citra >= 112 px hasilnya sama dengan default.
     kernel = max(max(img.shape[:2]) // 8, 14)
-    result = exposure.equalize_adapthist(img, kernel_size=kernel, clip_limit=clip)
-    return np.clip(np.round(result * 255), 0, 255).astype(np.uint8)
+    return exposure.equalize_adapthist(img, kernel_size=kernel, clip_limit=clip)
+
+
+def adaptive_he(img, clip):
+    return np.clip(np.round(adaptive_he_float(img, clip) * 255), 0, 255).astype(np.uint8)
+
+
+@st.cache_data(max_entries=8)
+def ahe_hist_all_clips(name):
+    """Histogram hasil AHE untuk semua clip_limit (cache: hanya menyimpan hitungan per bin)."""
+    blue = load_image(name)[:, :, 2]
+    out = {}
+    for c in CLIP_VALUES:
+        counts, edges = np.histogram(adaptive_he_float(blue, c).ravel() * 255, bins=256)
+        out[c] = (counts, edges)
+    return out
 
 
 def contrast_stretching(img):
@@ -326,16 +340,27 @@ enhanced = apply_enhancement(blue, method, clip)
 e_left, e_right = st.columns([1, 3])
 e_left.image(enhanced, caption=method, width="stretch", clamp=True)
 
-h_blue, _ = np.histogram(blue.ravel(), bins=256, range=(0, 256))
-h_enh, _ = np.histogram(enhanced.ravel(), bins=256, range=(0, 256))
-fig = Figure(figsize=(10, 2.8))
-ax = fig.subplots()
-ax.plot(h_blue, label="Blue Channel", color="blue")
-ax.plot(h_enh, label=method, color="crimson")
-ax.set_title(f"{name} - Histogram Blue Channel vs {method}")
-ax.set_xlabel("Intensitas Piksel")
-ax.set_ylabel("Jumlah Piksel")
-ax.legend()
+if method == ENHANCEMENTS[1]:
+    # AHE: histogram semua clip_limit digabung (model seperti di notebook)
+    fig = Figure(figsize=(10, 3))
+    ax = fig.subplots()
+    for c, (counts, edges) in ahe_hist_all_clips(name).items():
+        ax.hist(edges[:-1], bins=edges, weights=counts, alpha=0.4, label=f"{c}")
+    ax.set_title(f"{name} - Histogram Hasil AHE")
+    ax.set_xlabel("Intensitas Piksel")
+    ax.set_ylabel("Jumlah Piksel")
+    ax.legend(title="clip_limit")
+else:
+    h_blue, _ = np.histogram(blue.ravel(), bins=256, range=(0, 256))
+    h_enh, _ = np.histogram(enhanced.ravel(), bins=256, range=(0, 256))
+    fig = Figure(figsize=(10, 2.8))
+    ax = fig.subplots()
+    ax.plot(h_blue, label="Blue Channel", color="blue")
+    ax.plot(h_enh, label=method, color="crimson")
+    ax.set_title(f"{name} - Histogram Blue Channel vs {method}")
+    ax.set_xlabel("Intensitas Piksel")
+    ax.set_ylabel("Jumlah Piksel")
+    ax.legend()
 fig.tight_layout()
 e_right.pyplot(fig)
 
