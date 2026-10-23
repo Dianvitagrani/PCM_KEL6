@@ -12,16 +12,23 @@ from skimage import exposure, filters, io, morphology
 # ======================================================================
 # KONFIGURASI
 # ======================================================================
-# Taruh semua file citra di folder "images" (sejajar dengan app.py)
-IMAGE_DIR = "images"
-IMAGE_FILES = {
-    "ISIC_0010447": "ISIC_0010447.jpg",
-    "ISIC_0011157": "ISIC_0011157.jpg",
-    "ISIC_0010571": "ISIC_0010571.jpg",
-    "BCC_260": "BCC_260.jpg",
-    "BCC_32": "BCC_32.jpg",
-    "BCC_91": "BCC_91.jpg",
-}
+# Folder "images" dicari relatif terhadap lokasi app.py (bukan folder kerja),
+# supaya tetap jalan di Streamlit Cloud walau app.py ada di dalam subfolder.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+IMAGE_DIR = os.path.join(BASE_DIR, "images")
+IMAGE_NAMES = ["ISIC_0010447", "ISIC_0011157", "ISIC_0010571",
+               "BCC_260", "BCC_32", "BCC_91"]
+
+
+def find_images():
+    """Cocokkan nama citra dengan file di folder images (abaikan huruf besar/kecil & ekstensi)."""
+    if not os.path.isdir(IMAGE_DIR):
+        return {}
+    files = {os.path.splitext(f)[0].lower(): f for f in os.listdir(IMAGE_DIR)}
+    return {n: files[n.lower()] for n in IMAGE_NAMES if n.lower() in files}
+
+
+IMAGE_FILES = find_images()
 
 ENHANCEMENTS = [
     "Histogram Equalization (HE)",
@@ -209,11 +216,11 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-available = [n for n, fn in IMAGE_FILES.items()
-             if os.path.exists(os.path.join(IMAGE_DIR, fn))]
+available = list(IMAGE_FILES)
 if not available:
-    st.error(f"Tidak ada citra di folder '{IMAGE_DIR}/'. Taruh file citra di sana, "
-             "lalu sesuaikan IMAGE_FILES di app.py.")
+    found = os.listdir(IMAGE_DIR) if os.path.isdir(IMAGE_DIR) else "(folder tidak ditemukan)"
+    st.error(f"Tidak ada citra yang cocok di: {IMAGE_DIR}")
+    st.write("Isi folder tersebut:", found)
     st.stop()
 
 dd1, dd2 = st.columns(2)
