@@ -3,7 +3,7 @@ import os
 
 import matplotlib
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt
+from matplotlib.figure import Figure
 import numpy as np
 import pandas as pd
 import scipy.ndimage as ndi
@@ -139,7 +139,11 @@ def histogram_equalization(img):
 
 
 def adaptive_he(img, clip):
-    result = exposure.equalize_adapthist(img, clip_limit=clip)
+    # Tile default skimage = ukuran citra // 8. Pada citra kecil (mis. 28-64 px) tile jadi
+    # terlalu mungil sehingga clip_limit 0.01-0.05 tidak berpengaruh sama sekali.
+    # Karena itu tile minimal 14 px; untuk citra >= 112 px hasilnya sama dengan default.
+    kernel = max(max(img.shape[:2]) // 8, 14)
+    result = exposure.equalize_adapthist(img, kernel_size=kernel, clip_limit=clip)
     return np.clip(np.round(result * 255), 0, 255).astype(np.uint8)
 
 
@@ -262,7 +266,7 @@ def filter_row(label, cs, res):
 # HEADER + DROPDOWN
 # ======================================================================
 st.markdown(
-    f'<div class="header">{logo_html()}PENGOLAHAN CITRA MEDIKA IMAGE ENHANCEMENT</div>',
+    f'<div class="header">{logo_html()}PENGOLAHAN CITRA MEDIKA IMAGE ENHANCEMENT - Kelompok 6</div>',
     unsafe_allow_html=True,
 )
 
@@ -288,7 +292,8 @@ c_left, c_right = st.columns([1, 3])
 c_left.image(image, caption=name, width="stretch")
 
 # Model histogram sama seperti di notebook (ukuran font default, plot pendek & lebar)
-fig, axes = plt.subplots(1, 4, figsize=(15, 1.9))
+fig = Figure(figsize=(15, 1.9))
+axes = fig.subplots(1, 4)
 axes[0].hist(image[:, :, 0].ravel(), bins=256, color="red", alpha=0.5, label="Red")
 axes[0].hist(image[:, :, 1].ravel(), bins=256, color="green", alpha=0.5, label="Green")
 axes[0].hist(image[:, :, 2].ravel(), bins=256, color="blue", alpha=0.5, label="Blue")
@@ -300,9 +305,8 @@ for ax, ch, color in zip(axes[1:], range(3), ["red", "green", "blue"]):
 for ax in axes:
     ax.set_xlabel("Intensitas Piksel")
     ax.set_ylabel("Jumlah Piksel")
-plt.tight_layout()
+fig.tight_layout()
 c_right.pyplot(fig)
-plt.close(fig)
 
 show_images(
     [image, image[:, :, 0], image[:, :, 1], image[:, :, 2]],
@@ -324,16 +328,16 @@ e_left.image(enhanced, caption=method, width="stretch", clamp=True)
 
 h_blue, _ = np.histogram(blue.ravel(), bins=256, range=(0, 256))
 h_enh, _ = np.histogram(enhanced.ravel(), bins=256, range=(0, 256))
-fig, ax = plt.subplots(figsize=(10, 2.8))
+fig = Figure(figsize=(10, 2.8))
+ax = fig.subplots()
 ax.plot(h_blue, label="Blue Channel", color="blue")
 ax.plot(h_enh, label=method, color="crimson")
 ax.set_title(f"{name} - Histogram Blue Channel vs {method}")
 ax.set_xlabel("Intensitas Piksel")
 ax.set_ylabel("Jumlah Piksel")
 ax.legend()
-plt.tight_layout()
+fig.tight_layout()
 e_right.pyplot(fig)
-plt.close(fig)
 
 # ======================================================================
 # FILTER
@@ -356,7 +360,8 @@ st.dataframe(data["df"], width="stretch", hide_index=True)
 section("MASKING")
 m_left, m_right = st.columns([2, 3])
 
-fig, axes = plt.subplots(1, 2, figsize=(7, 3))
+fig = Figure(figsize=(7, 3))
+axes = fig.subplots(1, 2)
 axes[0].imshow(data["gauss"], cmap="gray", vmin=0, vmax=255)
 axes[0].contour(data["gauss"], [data["threshold"]])
 axes[0].set_title("Gaussian 3x3 + Contour Threshold", fontsize=9)
@@ -364,9 +369,8 @@ axes[1].imshow(data["binary"], cmap="gray")
 axes[1].set_title("Binary Image", fontsize=9)
 for ax in axes:
     ax.axis("off")
-plt.tight_layout()
+fig.tight_layout()
 m_left.pyplot(fig)
-plt.close(fig)
 
 with m_right:
     show_images(
