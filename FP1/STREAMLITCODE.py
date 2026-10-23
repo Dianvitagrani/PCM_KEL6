@@ -59,10 +59,21 @@ st.markdown(
         font-weight: 800; padding: 3px 16px; border-radius: 20px;
         margin: 18px 0 8px 0; font-size: 15px;
     }
-    div[data-baseweb="select"] > div { background-color: #9b1c31; color: white; }
-    div[data-baseweb="select"] svg { fill: white; }
-    div[data-baseweb="select"] span { color: white; }
-    label, .stMarkdown p { color: #3a0a12; }
+    /* Dropdown */
+    div[data-baseweb="select"] > div {
+        background-color: #9E182B !important; border-color: #9E182B !important;
+    }
+    div[data-baseweb="select"] * { color: white !important; }
+    div[data-baseweb="select"] svg { fill: white !important; }
+    /* Daftar pilihan dropdown */
+    div[data-baseweb="popover"] ul, div[data-baseweb="popover"] li {
+        background-color: #9E182B !important; color: white !important;
+    }
+    div[data-baseweb="popover"] li:hover { background-color: #c23a4d !important; }
+    /* Teks hitam: label dropdown, caption di bawah gambar, markdown */
+    [data-testid="stWidgetLabel"] p, [data-testid="stWidgetLabel"] label,
+    [data-testid="stImageCaption"], [data-testid="stCaptionContainer"],
+    figcaption, .stMarkdown p { color: #000000 !important; }
     </style>
     """,
     unsafe_allow_html=True,
