@@ -257,7 +257,7 @@ elif halaman == HALAMAN[1]:
 
 # ---- 3
 elif halaman == HALAMAN[2]:
-    st.header("Enhancement pada kanal Blue")
+    st.header("Enhancement pada Channel Blue")
     i = pilih_citra("enh_citra")
     kolom = st.columns(2)
     metode = kolom[0].radio("Metode enhancement",
@@ -275,11 +275,11 @@ elif halaman == HALAMAN[2]:
     else:
         hasil = contrast_stretching(image)
 
-    tampil(grid([(gray, "Kanal Blue (asli)", "gray"), (hasil, metode, "gray")], kolom=2, tinggi=4.5))
+    tampil(grid([(gray, "Channel Blue (asli)", "gray"), (hasil, metode, "gray")], kolom=2, tinggi=4.5))
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 2.8))
     axes[0].hist(gray.ravel(), bins=256, range=(0, 256), color="gray")
-    axes[0].set_title("Histogram Kanal Blue", fontsize=9)
+    axes[0].set_title("Histogram Channel Blue", fontsize=9)
     axes[1].hist(hasil.ravel(), bins=256, range=(0, 256), color="gray")
     axes[1].set_title("Histogram " + metode, fontsize=9)
     for ax in axes:
