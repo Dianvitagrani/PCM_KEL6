@@ -251,8 +251,7 @@ elif halaman == HALAMAN[1]:
     items = [(image[:, :, j], n, "gray") for j, n in enumerate(["Red Channel", "Green Channel", "Blue Channel"])]
     items.append((image, "All Channel", None))
     tampil(grid(items))
-    st.info("Kanal Blue dipilih karena rentang intensitasnya paling lebar (simpangan baku terbesar) "
-            "pada 5 dari 6 citra.")
+    st.info("Kanal Blue dipilih karena rentang intensitasnya paling lebar")
 
 # ---- 3
 elif halaman == HALAMAN[2]:
@@ -276,8 +275,6 @@ elif halaman == HALAMAN[2]:
         ax.set_xlabel("Intensity Value", fontsize=8)
         ax.set_ylabel("Pixel Count", fontsize=8)
     plt.tight_layout()
-    tampil(fig)
-    st.success("Contrast Stretching dipilih sebagai enhancement akhir.")
 
 # ---- 4
 elif halaman == HALAMAN[3]:
@@ -309,8 +306,6 @@ elif halaman == HALAMAN[4]:
     pilihan = st.selectbox("Tampilkan", ["Semua citra"] + IMAGE_NAMES)
     tampil_df = df if pilihan == "Semua citra" else df[df["Image"] == pilihan]
     st.dataframe(tampil_df.reset_index(drop=True))
-    st.caption("PSNR tinggi = citra hasil filter paling mirip dengan citra Contrast Stretching. "
-               "Gaussian 3x3 memberi PSNR tertinggi sehingga dipakai untuk tahap segmentasi.")
 
 # ---- 6
 elif halaman == HALAMAN[5]:
