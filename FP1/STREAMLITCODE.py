@@ -79,7 +79,11 @@ def apply_filter(image_cs, jenis, ukuran):
 def hitung_cs_semua():
     return [contrast_stretching(im) for im in load_images()]
 
-
+@cache
+def hitung_ahe(i, clip):
+    gray = load_images()[i][:, :, 2]
+    return exposure.equalize_adapthist(gray, clip_limit=clip)
+  
 @cache
 def hitung_metrik():
     images_cs = hitung_cs_semua()
@@ -257,30 +261,68 @@ elif halaman == HALAMAN[2]:
     metode = st.radio("Metode enhancement",
                       ["Histogram Equalization (HE)", "Adaptive HE (AHE)", "Contrast Stretching"],
                       horizontal=True)
-    clip = 0.003
-    if metode == "Adaptive HE (AHE)":
-        clip = st.select_slider("clip_limit AHE", options=[0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.03],
-                                value=0.003)
-    hasil = []
-    for image in images:
-        if metode == "Histogram Equalization (HE)":
-            hasil.append(histogram_equalization(image))
-        elif metode == "Adaptive HE (AHE)":
-            hasil.append((exposure.equalize_adapthist(image[:, :, 2], clip_limit=clip) * 255).astype(np.uint8))
-        else:
-            hasil.append(contrast_stretching(image))
-    st.subheader("Hasil " + metode)
-    tampil(grid([(im, n, "gray") for im, n in zip(hasil, IMAGE_NAMES)], kolom=3, tinggi=3.5))
-    st.subheader("Histogram sebelum dan sesudah")
-    fig, axes = plt.subplots(2, 3, figsize=(15, 6))
-    for ax, image, im, n in zip(axes.ravel(), images, hasil, IMAGE_NAMES):
-        ax.plot(np.histogram(image[:, :, 2].ravel(), bins=256, range=(0, 256))[0], label="Kanal Blue")
-        ax.plot(np.histogram(im.ravel(), bins=256, range=(0, 256))[0], label=metode)
-        ax.set_title(n, fontsize=9)
+    clip_values = [0.001, 0.002, 0.003, 0.004, 0.005]
+    n = len(images)
+
+    # ---------- gambar: kanal Blue (asli) vs hasil enhancement, per citra
+    if metode == "Histogram Equalization (HE)":
+        hasil = [histogram_equalization(im) for im in images]
+        fig, axes = plt.subplots(n, 2, figsize=(9, 3.6 * n))
+        for i in range(n):
+            axes[i, 0].imshow(images[i][:, :, 2], cmap="gray", vmin=0, vmax=255)
+            axes[i, 0].set_title(IMAGE_NAMES[i] + " - Kanal Blue", fontsize=8)
+            axes[i, 1].imshow(hasil[i], cmap="gray", vmin=0, vmax=255)
+            axes[i, 1].set_title("Histogram Equalization", fontsize=8)
+    elif metode == "Adaptive HE (AHE)":
+        fig, axes = plt.subplots(n, 6, figsize=(18, 2.9 * n))
+        for i in range(n):
+            axes[i, 0].imshow(images[i][:, :, 2], cmap="gray", vmin=0, vmax=255)
+            axes[i, 0].set_title(IMAGE_NAMES[i], fontsize=7)
+            for j, clip in enumerate(clip_values, start=1):
+                axes[i, j].imshow(hitung_ahe(i, clip), cmap="gray", vmin=0, vmax=1)
+                axes[i, j].set_title("clip_limit " + str(clip), fontsize=8)
+    else:
+        hasil = hitung_cs_semua()
+        fig, axes = plt.subplots(n, 2, figsize=(9, 3.6 * n))
+        for i in range(n):
+            axes[i, 0].imshow(images[i][:, :, 2], cmap="gray", vmin=0, vmax=255)
+            axes[i, 0].set_title(IMAGE_NAMES[i] + " - Kanal Blue", fontsize=8)
+            axes[i, 1].imshow(hasil[i], cmap="gray", vmin=0, vmax=255)
+            axes[i, 1].set_title("Contrast Stretching", fontsize=8)
+    for ax in axes.ravel():
+        ax.axis("off")
+    plt.tight_layout()
+    st.subheader("Citra kanal Blue dibanding hasil " + metode)
+    tampil(fig)
+
+    # ---------- histogram
+    st.subheader("Histogram")
+    if metode == "Histogram Equalization (HE)":
+        fig, axes = plt.subplots(n, 2, figsize=(10, 2.6 * n))
+        for i in range(n):
+            axes[i, 0].hist(images[i][:, :, 2].ravel(), bins=256, range=(0, 256), color="gray")
+            axes[i, 0].set_title(IMAGE_NAMES[i], fontsize=8)
+            axes[i, 1].hist(hasil[i].ravel(), bins=256, range=(0, 256), color="gray")
+            axes[i, 1].set_title("Histogram HE", fontsize=8)
+    elif metode == "Adaptive HE (AHE)":
+        fig, axes = plt.subplots(n, 1, figsize=(10, 2.6 * n))
+        for ax, i in zip(axes, range(n)):
+            for clip in clip_values:
+                ax.hist(hitung_ahe(i, clip).ravel() * 255, bins=256, alpha=0.35, label=str(clip))
+            ax.set_title(IMAGE_NAMES[i], fontsize=8)
+            ax.legend(title="clip_limit", fontsize=7)
+    else:
+        fig, axes = plt.subplots(n, 1, figsize=(9, 2.6 * n))
+        for ax, i in zip(axes, range(n)):
+            ax.plot(np.histogram(images[i][:, :, 2].ravel(), bins=256, range=(0, 256))[0], label="Kanal Blue")
+            ax.plot(np.histogram(hasil[i].ravel(), bins=256, range=(0, 256))[0], label="Contrast Stretching")
+            ax.set_title(IMAGE_NAMES[i], fontsize=8)
+            ax.legend(fontsize=7)
+    for ax in np.atleast_1d(axes).ravel():
         ax.set_xlim(0, 255)
-        ax.legend(fontsize=7)
-        ax.set_xlabel("Intensity Value", fontsize=8)
-        ax.set_ylabel("Pixel Count", fontsize=8)
+        ax.tick_params(labelsize=7)
+        ax.set_xlabel("Intensity Value", fontsize=7)
+        ax.set_ylabel("Pixel Count", fontsize=7)
     plt.tight_layout()
     tampil(fig)
 
