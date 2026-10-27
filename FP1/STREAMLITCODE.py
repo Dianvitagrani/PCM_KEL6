@@ -215,16 +215,14 @@ images = load_images()
 
 # ---------------------------------------------------------------- tampilan
 st.title("Pengolahan Citra Medika - Kelompok 6")
-st.caption("Enhancement, filtering, segmentasi, dan ekstraksi fitur pada 6 citra lesi kulit "
-           "(3 ISIC + 3 MedMNIST).")
 
-HALAMAN = ["1. Citra & histogram", "2. channel warna", "3. Enhancement", "4. Filtering",
-           "5. Evaluasi MSE & PSNR", "6. Segmentasi", "7. Ekstraksi fitur (regionprops)"]
+HALAMAN = ["1. Citra & histogram", "2. Channel warna", "3. Enhancement", "4. Filtering",
+           "5. Evaluasi MSE & PSNR", "6. Segmentasi", "7. Ekstraksi fitur"]
 halaman = st.sidebar.radio("Tahap", HALAMAN)
 
 # ---- 1
 if halaman == HALAMAN[0]:
-    st.header("Citra asli dan histogram RGB")
+    st.header("Citra asli dan Histogram RGB")
     tampil(grid([(im, n, None) for im, n in zip(images, IMAGE_NAMES)], kolom=3, tinggi=3.5))
     i = pilih_citra("hist_citra")
     image = images[i]
@@ -235,7 +233,7 @@ if halaman == HALAMAN[0]:
         axes[c + 1].hist(image[:, :, c].ravel(), bins=256, color=warna)
         axes[c + 1].set_title(warna.title(), fontsize=9)
     axes[0].set_title("RGB", fontsize=9)
-    axes[0].legend(fontsize=7)
+    axes[0].legend(fontsize=5)
     for ax in axes:
         ax.set_xlim(0, 255)
         ax.set_xlabel("Intensity Value", fontsize=8)
@@ -251,7 +249,7 @@ elif halaman == HALAMAN[1]:
     items = [(image[:, :, j], n, "gray") for j, n in enumerate(["Red Channel", "Green Channel", "Blue Channel"])]
     items.append((image, "All Channel", None))
     tampil(grid(items))
-    st.info("channel Blue dipilih karena rentang intensitasnya paling lebar")
+    st.info("Channel Blue dipilih karena rentang intensitasnya paling lebar")
 
 # ---- 3
 elif halaman == HALAMAN[2]:
