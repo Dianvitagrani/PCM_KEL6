@@ -1,10 +1,5 @@
-# -*- coding: utf-8 -*-
-"""
-Project PCM Kelompok 6 - Pengolahan Citra Dermoskopi (Streamlit)
-Jalankan:  streamlit run app_pcm.py
-Taruh 6 file citra di folder "data" (sebelah file ini):
-ISIC_0011387.jpg, ISIC_0011157.jpg, ISIC_0011346.jpg, NV_6675.jpg, VASC_6606.jpg, BKL_6556.jpg
-"""
+#Project PCM Kelompok 6 - Pengolahan Citra Dermoskopi (Streamlit)
+
 import os
 import io as bio
 
