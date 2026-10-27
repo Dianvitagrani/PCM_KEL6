@@ -18,7 +18,7 @@ import streamlit as st
 from skimage import io, exposure, filters, morphology, measure
 
 # ---------------------------------------------------------------- konfigurasi
-DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
 FILE_NAMES = ["ISIC_0011387.jpg", "ISIC_0011157.jpg", "ISIC_0011346.jpg",
               "NV_6675.jpg", "VASC_6606.jpg", "BKL_6556.jpg"]
 IMAGE_NAMES = ["ISIC_0011387 - Melanoma in situ", "ISIC_0011157 - Nevus",
