@@ -1,4 +1,4 @@
-#Project PCM Kelompok 6 - Pengolahan Citra Dermoskopi (Streamlit)
+#Project PCM Kelompok 6 - Pengolahan Citra Medika (Streamlit)
 
 import os
 import io as bio
@@ -214,11 +214,11 @@ if not all(ada):
 images = load_images()
 
 # ---------------------------------------------------------------- tampilan
-st.title("Pengolahan Citra Dermoskopi - Kelompok 6")
+st.title("Pengolahan Citra Medika - Kelompok 6")
 st.caption("Enhancement, filtering, segmentasi, dan ekstraksi fitur pada 6 citra lesi kulit "
            "(3 ISIC + 3 MedMNIST).")
 
-HALAMAN = ["1. Citra & histogram", "2. Kanal warna", "3. Enhancement", "4. Filtering",
+HALAMAN = ["1. Citra & histogram", "2. channel warna", "3. Enhancement", "4. Filtering",
            "5. Evaluasi MSE & PSNR", "6. Segmentasi", "7. Ekstraksi fitur (regionprops)"]
 halaman = st.sidebar.radio("Tahap", HALAMAN)
 
@@ -245,17 +245,17 @@ if halaman == HALAMAN[0]:
 
 # ---- 2
 elif halaman == HALAMAN[1]:
-    st.header("Citra per kanal warna")
-    i = pilih_citra("kanal_citra")
+    st.header("Citra per channel warna")
+    i = pilih_citra("channel_citra")
     image = images[i]
     items = [(image[:, :, j], n, "gray") for j, n in enumerate(["Red Channel", "Green Channel", "Blue Channel"])]
     items.append((image, "All Channel", None))
     tampil(grid(items))
-    st.info("Kanal Blue dipilih karena rentang intensitasnya paling lebar")
+    st.info("channel Blue dipilih karena rentang intensitasnya paling lebar")
 
 # ---- 3
 elif halaman == HALAMAN[2]:
-    st.header("Enhancement pada kanal Blue")
+    st.header("Enhancement pada channel Blue")
     i = pilih_citra("enh_citra")
     image = images[i]
     gray = image[:, :, 2]
@@ -264,7 +264,7 @@ elif halaman == HALAMAN[2]:
     he = histogram_equalization(image)
     ahe = (exposure.equalize_adapthist(gray, clip_limit=clip) * 255).astype(np.uint8)
     cs = contrast_stretching(image)
-    hasil = [("Kanal Blue", gray), ("Histogram Equalization", he),
+    hasil = [("channel Blue", gray), ("Histogram Equalization", he),
              ("AHE (clip %.3f)" % clip, ahe), ("Contrast Stretching", cs)]
     tampil(grid([(im, t, "gray") for t, im in hasil]))
     fig, axes = plt.subplots(1, 4, figsize=(16, 2.8))
