@@ -184,17 +184,17 @@ def hitung_metrik():
 
 @cache
 def hitung_filter_otsu():
-        """Gaussian 3x3 lalu Otsu -> images_gauss, binary_images, threshold."""
+    """Gaussian 3x3 lalu Otsu -> images_gauss, binary_images, threshold."""
     images_cs = hitung_cs_semua()
     images_gauss, binary_images, thresholds = [], [], []
     for i, image_cs in enumerate(images_cs):
-               image_gauss = np.clip(ndi.convolve(image_cs.astype(float), gaussian_kernel(3, 0.5)),
+        image_gauss = np.clip(ndi.convolve(image_cs.astype(float), gaussian_kernel(3, 0.5)),
+                              0, 255).astype(np.uint8)
         threshold = filters.threshold_otsu(image_gauss)
         images_gauss.append(image_gauss)
         binary_images.append(image_gauss < threshold)
         thresholds.append(int(threshold))
     return images_gauss, binary_images, thresholds
-
 
 def largest_component(mask):
     label_image = measure.label(mask)
