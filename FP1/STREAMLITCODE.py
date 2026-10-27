@@ -16,11 +16,10 @@ from skimage import io, exposure, filters, morphology, measure
 # ---------------------------------------------------------------- konfigurasi
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "images")
 FILE_NAMES = ["ISIC_0011387.jpg", "ISIC_0011157.jpg", "ISIC_0011346.jpg",
-              "NV_6675.jpg", "VASC_6606.jpg", "BKL_6556.jpg"]
+              "NV_6675.jpg", "VASC_6606.jpg", "BKL_6976.jpg"]
 IMAGE_NAMES = ["ISIC_0011387 - Melanoma in situ", "ISIC_0011157 - Nevus",
                "ISIC_0011346 - Lentigo NOS", "NV_6675 - Melanocytic nevus",
-               "VASC_6606 - Vascular lesion", "BKL_6556 - Benign keratosis-like lesion"]
-INDEKS_RAMBUT = [5]          # citra berambut (BKL) -> median 7x7 sebelum Gaussian
+               "VASC_6606 - Vascular lesion", "BKL_6976 - Benign keratosis-like lesion"]
 MIN_SIZE = 300
 
 try:                          # kompatibel dengan versi Streamlit lama dan baru
@@ -185,13 +184,11 @@ def hitung_metrik():
 
 @cache
 def hitung_filter_otsu():
-    """Gaussian 3x3 (BKL: median 7x7 dulu) lalu Otsu -> images_gauss, binary_images, threshold."""
+        """Gaussian 3x3 lalu Otsu -> images_gauss, binary_images, threshold."""
     images_cs = hitung_cs_semua()
     images_gauss, binary_images, thresholds = [], [], []
     for i, image_cs in enumerate(images_cs):
-        dasar = ndi.median_filter(image_cs, size=7) if i in INDEKS_RAMBUT else image_cs
-        image_gauss = np.clip(ndi.convolve(dasar.astype(float), gaussian_kernel(3, 0.5)),
-                              0, 255).astype(np.uint8)
+               image_gauss = np.clip(ndi.convolve(image_cs.astype(float), gaussian_kernel(3, 0.5)),
         threshold = filters.threshold_otsu(image_gauss)
         images_gauss.append(image_gauss)
         binary_images.append(image_gauss < threshold)
@@ -211,8 +208,7 @@ def segmentasi(i):
     images_cs = hitung_cs_semua()
     images_gauss, binary_images, thresholds = hitung_filter_otsu()
     image, binary_image = images[i], binary_images[i]
-    judul_filter = "Hasil filter (Median 7x7 + Gaussian 3x3)" if i in INDEKS_RAMBUT \
-        else "Hasil filter (Gaussian 3x3)"
+    judul_filter = "Hasil filter (Gaussian 3x3)" 
 
     steps = [(image, "Citra asli (RGB)", None),
              (images_gauss[i], judul_filter, "gray"),
