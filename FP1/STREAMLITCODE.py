@@ -1,5 +1,6 @@
 #Project PCM Kelompok 6 - Pengolahan Citra Medika (Streamlit)
 
+import base64
 import os
 import io as bio
 
@@ -28,6 +29,90 @@ except AttributeError:
     cache = st.cache(allow_output_mutation=True)
 
 st.set_page_config(page_title="PCM Kelompok 6", layout="wide")
+
+
+def logo_html():
+    """Cari file logo*.png/jpg/webp di folder app ini atau images/, tampilkan di kiri header."""
+    mimes = {".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg",
+             ".webp": "image/webp", ".svg": "image/svg+xml"}
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    for folder in (base_dir, DATA_DIR):
+        if not os.path.isdir(folder):
+            continue
+        for f in sorted(os.listdir(folder)):
+            stem, ext = os.path.splitext(f)
+            if stem.lower().startswith("logo") and ext.lower() in mimes:
+                with open(os.path.join(folder, f), "rb") as fh:
+                    b64 = base64.b64encode(fh.read()).decode()
+                return ('<img src="data:%s;base64,%s" '
+                        'style="height:48px;position:absolute;left:20px;top:50%%;'
+                        'transform:translateY(-50%%);">' % (mimes[ext.lower()], b64))
+    return ""
+
+
+st.markdown(
+    """
+    <style>
+    .stApp { background-color: #ffd6d6; }
+    [data-testid="stSidebar"] { background-color: #f9b8c4; }
+    .header {
+        position: relative; background: #f08a9b; color: white; text-align: center;
+        font-size: 28px; font-weight: 800; letter-spacing: 1px;
+        padding: 10px 20px; border-radius: 30px; margin-bottom: 18px;
+    }
+    .pill {
+        display: inline-block; background: #f08a9b; color: white;
+        font-weight: 800; padding: 3px 16px; border-radius: 20px;
+        margin: 18px 0 8px 0; font-size: 15px;
+    }
+    [data-testid="stMetric"] {
+        background: #ffffff; border-left: 6px solid #9E182B;
+        border-radius: 10px; padding: 10px 14px;
+    }
+    /* Dropdown (Streamlit versi baru) */
+    [data-testid="stSelectbox"] div[role="group"] {
+        background-color: #9E182B !important; border-color: #9E182B !important;
+    }
+    [data-testid="stSelectbox"] input {
+        color: white !important; -webkit-text-fill-color: white !important;
+    }
+    [data-testid="stSelectbox"] svg { fill: white !important; color: white !important; }
+    /* Daftar pilihan saat dropdown dibuka */
+    [data-testid="stSelectboxVirtualDropdown"],
+    [data-testid="stSelectboxVirtualDropdown"] [role="listbox"] {
+        background-color: #9E182B !important;
+    }
+    [data-testid="stSelectboxVirtualDropdown"] [role="option"],
+    [data-testid="stSelectboxVirtualDropdown"] [role="option"] * {
+        color: white !important; background-color: transparent !important;
+    }
+    [data-testid="stSelectboxVirtualDropdown"] [role="option"]:hover,
+    [data-testid="stSelectboxVirtualDropdown"] [role="option"][aria-selected="true"] {
+        background-color: #c23a4d !important;
+    }
+    /* Dropdown (Streamlit versi lama) */
+    div[data-baseweb="select"] > div {
+        background-color: #9E182B !important; border-color: #9E182B !important;
+    }
+    div[data-baseweb="select"] * { color: white !important; }
+    div[data-baseweb="select"] svg { fill: white !important; }
+    div[data-baseweb="popover"] ul, div[data-baseweb="popover"] li {
+        background-color: #9E182B !important; color: white !important;
+    }
+    /* Teks hitam: label, caption, markdown, pilihan radio */
+    [data-testid="stWidgetLabel"] p, [data-testid="stWidgetLabel"] label,
+    [data-testid="stRadio"] label p,
+    [data-testid="stImageCaption"], [data-testid="stCaptionContainer"],
+    figcaption, .stMarkdown p, [data-testid="stMetricLabel"] p,
+    [data-testid="stMetricValue"] { color: #000000 !important; opacity: 1 !important; }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
+
+
+def section(title):
+    st.markdown('<div class="pill">%s</div>' % title, unsafe_allow_html=True)
 
 
 # ---------------------------------------------------------------- fungsi dasar
@@ -218,7 +303,8 @@ if not all(ada):
 images = load_images()
 
 # ---------------------------------------------------------------- tampilan
-st.title("Pengolahan Citra Medika - Kelompok 6")
+st.markdown('<div class="header">%sPENGOLAHAN CITRA MEDIKA - Kelompok 6</div>' % logo_html(),
+            unsafe_allow_html=True)
 
 HALAMAN = ["1. Citra & histogram", "2. Channel warna", "3. Enhancement", "4. Filtering",
            "5. Evaluasi MSE & PSNR", "6. Segmentasi", "7. Ekstraksi fitur"]
@@ -226,7 +312,7 @@ halaman = st.sidebar.radio("Tahap", HALAMAN)
 
 # ---- 1
 if halaman == HALAMAN[0]:
-    st.header("Citra asli dan Histogram RGB")
+    section("Citra asli dan Histogram RGB")
     tampil(grid([(im, n, None) for im, n in zip(images, IMAGE_NAMES)], kolom=3, tinggi=3.5))
     i = pilih_citra("hist_citra")
     image = images[i]
@@ -247,7 +333,7 @@ if halaman == HALAMAN[0]:
 
 # ---- 2
 elif halaman == HALAMAN[1]:
-    st.header("Citra per channel warna")
+    section("Citra per channel warna")
     i = pilih_citra("channel_citra")
     image = images[i]
     items = [(image[:, :, j], n, "gray") for j, n in enumerate(["Red Channel", "Green Channel", "Blue Channel"])]
@@ -257,7 +343,7 @@ elif halaman == HALAMAN[1]:
 
 # ---- 3
 elif halaman == HALAMAN[2]:
-    st.header("Enhancement pada Channel Blue")
+    section("Enhancement pada Channel Blue")
     i = pilih_citra("enh_citra")
     kolom = st.columns(2)
     metode = kolom[0].radio("Metode enhancement",
@@ -291,7 +377,7 @@ elif halaman == HALAMAN[2]:
 
 # ---- 4
 elif halaman == HALAMAN[3]:
-    st.header("Filtering pada hasil Contrast Stretching")
+    section("Filtering pada hasil Contrast Stretching")
     i = pilih_citra("fil_citra")
     image_cs = hitung_cs_semua()[i]
     kolom = st.columns(2)
@@ -314,7 +400,7 @@ elif halaman == HALAMAN[3]:
 
 # ---- 5
 elif halaman == HALAMAN[4]:
-    st.header("Evaluasi filter: MSE dan PSNR")
+    section("Evaluasi filter: MSE dan PSNR")
     df = hitung_metrik()
     pilihan = st.selectbox("Tampilkan", ["Semua citra"] + IMAGE_NAMES)
     tampil_df = df if pilihan == "Semua citra" else df[df["Image"] == pilihan]
@@ -322,7 +408,7 @@ elif halaman == HALAMAN[4]:
 
 # ---- 6
 elif halaman == HALAMAN[5]:
-    st.header("Segmentasi dan masking")
+    section("Segmentasi dan masking")
     i = pilih_citra("seg_citra")
     steps, mask = segmentasi(i)
     tampil(grid(steps))
@@ -330,7 +416,7 @@ elif halaman == HALAMAN[5]:
 
 # ---- 7
 else:
-    st.header("Ekstraksi fitur region (regionprops)")
+    section("Ekstraksi fitur region (regionprops)")
     df_region = region_table()
     st.dataframe(df_region)
     try:
