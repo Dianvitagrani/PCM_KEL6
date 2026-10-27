@@ -1,3 +1,67 @@
+import streamlit as st
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image
+from skimage import exposure, filters, morphology, measure, color
+from scipy import ndimage as ndi
+import cv2
+
+st.set_page_config(page_title="Pengolahan Citra Lesi Kulit", layout="wide")
+st.title("Pengolahan Citra Lesi Kulit")
+st.write("Aplikasi sederhana untuk enhancement, filtering, histogram, evaluasi, dan segmentasi citra.")
+
+uploaded_file = st.file_uploader(
+    "Unggah citra kulit (JPG, JPEG, atau PNG)",
+    type=["jpg", "jpeg", "png"]
+)
+
+def to_uint8(image):
+    """Pastikan citra berada pada rentang 0–255."""
+    image = np.asarray(image)
+    if image.dtype == np.uint8:
+        return image
+    if image.max() <= 1:
+        image = image * 255
+    return np.clip(image, 0, 255).astype(np.uint8)
+
+def gray_blue(image):
+    """Mengambil channel biru seperti eksperimen pada notebook."""
+    if image.ndim == 3:
+        return image[:, :, 2]
+    return image
+
+def histogram_equalization(image):
+    hist, _ = np.histogram(image.ravel(), bins=256, range=(0, 256))
+    cdf = hist.cumsum()
+    cdf_nonzero = cdf[cdf > 0]
+    if len(cdf_nonzero) == 0 or cdf_nonzero[-1] == cdf_nonzero[0]:
+        return image.copy()
+    cdf_min = cdf_nonzero[0]
+    lut = np.clip((cdf - cdf_min) * 255 / (cdf[-1] - cdf_min), 0, 255)
+    return lut[image].astype(np.uint8)
+
+def contrast_stretch(image):
+    image_float = image.astype(float)
+    low, high = image_float.min(), image_float.max()
+    if high == low:
+        return image.copy()
+    return np.clip((image_float - low) * 255 / (high - low), 0, 255).astype(np.uint8)
+
+def gaussian_kernel(size, sigma):
+    axis = np.arange(-(size // 2), size // 2 + 1)
+    xx, yy = np.meshgrid(axis, axis)
+    kernel = np.exp(-(xx**2 + yy**2) / (2 * sigma**2))
+    return kernel / kernel.sum()
+
+def mse_psnr(reference, result):
+    reference = reference.astype(float)
+    result = result.astype(float)
+    mse = np.mean((reference - result) ** 2)
+    psnr = float("inf") if mse == 0 else 10 * np.log10((255**2) / mse)
+    return mse, psnr
+
+def make_histogram(image, title):
+    fig, ax = plt.subplots(figsize=(7, 2.5))
     ax.hist(image.ravel(), bins=256, range=(0, 256))
     ax.set_title(title)
     ax.set_xlabel("Intensitas piksel")
