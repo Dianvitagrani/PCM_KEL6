@@ -253,26 +253,36 @@ elif halaman == HALAMAN[1]:
 
 # ---- 3
 elif halaman == HALAMAN[2]:
-    st.header("Enhancement pada channel Blue")
-    i = pilih_citra("enh_citra")
-    image = images[i]
-    gray = image[:, :, 2]
-    clip = st.select_slider("clip_limit AHE", options=[0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.03],
-                            value=0.003)
-    he = histogram_equalization(image)
-    ahe = (exposure.equalize_adapthist(gray, clip_limit=clip) * 255).astype(np.uint8)
-    cs = contrast_stretching(image)
-    hasil = [("channel Blue", gray), ("Histogram Equalization", he),
-             ("AHE (clip %.3f)" % clip, ahe), ("Contrast Stretching", cs)]
-    tampil(grid([(im, t, "gray") for t, im in hasil]))
-    fig, axes = plt.subplots(1, 4, figsize=(16, 2.8))
-    for ax, (t, im) in zip(axes, hasil):
-        ax.hist(im.ravel(), bins=256, range=(0, 256), color="gray")
-        ax.set_title("Histogram " + t, fontsize=9)
+    st.header("Enhancement pada kanal Blue")
+    metode = st.radio("Metode enhancement",
+                      ["Histogram Equalization (HE)", "Adaptive HE (AHE)", "Contrast Stretching"],
+                      horizontal=True)
+    clip = 0.003
+    if metode == "Adaptive HE (AHE)":
+        clip = st.select_slider("clip_limit AHE", options=[0.001, 0.002, 0.003, 0.004, 0.005, 0.01, 0.03],
+                                value=0.003)
+    hasil = []
+    for image in images:
+        if metode == "Histogram Equalization (HE)":
+            hasil.append(histogram_equalization(image))
+        elif metode == "Adaptive HE (AHE)":
+            hasil.append((exposure.equalize_adapthist(image[:, :, 2], clip_limit=clip) * 255).astype(np.uint8))
+        else:
+            hasil.append(contrast_stretching(image))
+    st.subheader("Hasil " + metode)
+    tampil(grid([(im, n, "gray") for im, n in zip(hasil, IMAGE_NAMES)], kolom=3, tinggi=3.5))
+    st.subheader("Histogram sebelum dan sesudah")
+    fig, axes = plt.subplots(2, 3, figsize=(15, 6))
+    for ax, image, im, n in zip(axes.ravel(), images, hasil, IMAGE_NAMES):
+        ax.plot(np.histogram(image[:, :, 2].ravel(), bins=256, range=(0, 256))[0], label="Kanal Blue")
+        ax.plot(np.histogram(im.ravel(), bins=256, range=(0, 256))[0], label=metode)
+        ax.set_title(n, fontsize=9)
         ax.set_xlim(0, 255)
+        ax.legend(fontsize=7)
         ax.set_xlabel("Intensity Value", fontsize=8)
         ax.set_ylabel("Pixel Count", fontsize=8)
     plt.tight_layout()
+    tampil(fig)
 
 # ---- 4
 elif halaman == HALAMAN[3]:
